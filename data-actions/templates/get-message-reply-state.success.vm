@@ -1,0 +1,91 @@
+## ---------------------------------------------------------------------------
+## Success template for data action "Get Message Reply State"
+## Runs inside Genesys Cloud (Velocity) against the raw response of
+##   GET /api/v2/conversations/messages/{conversationId}
+## and reduces it to the few scalars the Architect workflow needs.
+##
+## Rule implemented here (same rule the workflow relies on):
+##   waitingSince  = later of (last customer message, moment an agent connected)
+##   awaitingReply = an agent is connected AND no agent message at/after waitingSince
+## Receipts / events never count as messages. Timestamps are ISO-8601 UTC with the
+## same format, so string comparison (compareTo) orders them correctly.
+## ---------------------------------------------------------------------------
+#set($lastInbound = "")
+#set($lastOutbound = "")
+#set($agentConnectedTime = "")
+#set($agentStates = "")
+#set($agentNames = "")
+#set($anyAgentConnected = false)
+#set($customerConnected = false)
+#set($customerName = "")
+#set($customerParticipantId = "")
+#set($channel = "")
+#set($inboundCount = 0)
+#foreach($p in $participants)
+#set($purpose = "$!{p.purpose}")
+#set($pstate = "$!{p.state}")
+#if($purpose == "customer" || $purpose == "external")
+#if($customerName == "")#set($customerName = "$!{p.name}")#end
+#if($customerParticipantId == "")#set($customerParticipantId = "$!{p.id}")#end
+#if($pstate == "connected")#set($customerConnected = true)#end
+#if($channel == "" && $p.type)#set($channel = "$!{p.type}")#end
+#end
+#if($purpose == "agent" || $purpose == "user")
+#if($p.user && $p.user.id)
+#set($entry = "$!{p.user.id}:$pstate")
+#if($agentStates == "")#set($agentStates = $entry)#else#set($agentStates = "$agentStates;$entry")#end
+#end
+#if($pstate == "connected")
+#set($anyAgentConnected = true)
+#if($p.name)
+#set($pname = "$!{p.name}")
+#if($agentNames == "")#set($agentNames = $pname)#else#set($agentNames = "$agentNames; $pname")#end
+#end
+#if($p.connectedTime)
+#set($ct = $p.connectedTime)
+#if($agentConnectedTime == "" || $ct.compareTo($agentConnectedTime) > 0)#set($agentConnectedTime = $ct)#end
+#end
+#if($channel == "" && $p.type)#set($channel = "$!{p.type}")#end
+#end
+#end
+#foreach($m in $p.messages)
+#set($ignore = false)
+#set($mtype = "")
+#if($m.messageMetadata && $m.messageMetadata.type)#set($mtype = "$!{m.messageMetadata.type}")#end
+#if($mtype == "Receipt" || $mtype == "Event")#set($ignore = true)#end
+#set($mstatus = "$!{m.messageStatus}")
+#if($mstatus == "removed" || $mstatus == "failed")#set($ignore = true)#end
+#if(!$ignore && $m.messageTime)
+#set($mtime = $m.messageTime)
+#if($mstatus == "received")
+#if($lastInbound == "" || $mtime.compareTo($lastInbound) > 0)#set($lastInbound = $mtime)#end
+#set($inboundCount = $inboundCount + 1)
+#else
+#if($lastOutbound == "" || $mtime.compareTo($lastOutbound) > 0)#set($lastOutbound = $mtime)#end
+#end
+#end
+#end
+#end
+#set($waitingSince = $agentConnectedTime)
+#if($lastInbound != "")
+#if($waitingSince == "")#set($waitingSince = $lastInbound)#elseif($lastInbound.compareTo($waitingSince) > 0)#set($waitingSince = $lastInbound)#end
+#end
+#set($awaitingReply = false)
+#if($anyAgentConnected && $waitingSince != "")
+#if($lastOutbound == "")#set($awaitingReply = true)#elseif($lastOutbound.compareTo($waitingSince) < 0)#set($awaitingReply = true)#end
+#end
+{
+  "anyAgentConnected": $anyAgentConnected,
+  "customerConnected": $customerConnected,
+  "awaitingReply": $awaitingReply,
+  "waitingSince": "$waitingSince",
+  "lastInboundTime": "$lastInbound",
+  "lastOutboundTime": "$lastOutbound",
+  "agentConnectedTime": "$agentConnectedTime",
+  "agentStates": "$agentStates",
+  "agentNames": "$esc.jsonString($agentNames)",
+  "customerName": "$esc.jsonString($customerName)",
+  "customerParticipantId": "$customerParticipantId",
+  "channel": "$channel",
+  "inboundMessageCount": $inboundCount
+}

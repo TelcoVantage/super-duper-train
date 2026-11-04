@@ -1,0 +1,21 @@
+{
+  "name": "Message connected to agent -> Unanswered Message Watchdog",
+  "description": "Starts the Unanswered Message Watchdog workflow every time a message interaction (web messaging, SMS, WhatsApp, social, open messaging) reaches an agent. The workflow polls the conversation and alerts the agent when the customer has waited too long for a reply.",
+  "topicName": "v2.detail.events.conversation.{id}.user.start",
+  "target": {
+    "type": "Workflow",
+    "id": "REPLACE_WITH_WORKFLOW_FLOW_ID",
+    "workflowTargetSettings": {
+      "dataFormat": "TopLevelPrimitives"
+    }
+  },
+  "matchCriteria": [
+    {
+      "jsonPath": "mediaType",
+      "operator": "Equal",
+      "value": "message"
+    }
+  ],
+  "eventTTLSeconds": 120,
+  "enabled": false
+}

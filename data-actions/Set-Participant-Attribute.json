@@ -1,0 +1,64 @@
+{
+  "name": "Set Participant Attribute",
+  "integrationType": "purecloud-data-actions",
+  "actionType": "custom",
+  "config": {
+    "request": {
+      "requestUrlTemplate": "/api/v2/conversations/messages/${input.CONVERSATION_ID}/participants/${input.PARTICIPANT_ID}/attributes",
+      "requestType": "PATCH",
+      "headers": {},
+      "requestTemplate": "{\"attributes\": {\"$esc.jsonString(${input.KEY})\": \"$esc.jsonString(${input.VALUE})\"}}"
+    },
+    "response": {
+      "translationMap": {},
+      "translationMapDefaults": {},
+      "successTemplate": "{\"ok\": true}"
+    }
+  },
+  "contract": {
+    "input": {
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Input",
+        "type": "object",
+        "properties": {
+          "CONVERSATION_ID": {
+            "type": "string"
+          },
+          "PARTICIPANT_ID": {
+            "type": "string",
+            "description": "Participant to write the attribute on (use the customer participant: it survives transfers)"
+          },
+          "KEY": {
+            "type": "string"
+          },
+          "VALUE": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "CONVERSATION_ID",
+          "PARTICIPANT_ID",
+          "KEY",
+          "VALUE"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "output": {
+      "successSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Output",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      }
+    }
+  },
+  "secure": false
+}

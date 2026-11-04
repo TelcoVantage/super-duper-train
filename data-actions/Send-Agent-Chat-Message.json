@@ -1,0 +1,61 @@
+{
+  "name": "Send Agent Chat Message",
+  "integrationType": "purecloud-data-actions",
+  "actionType": "custom",
+  "config": {
+    "request": {
+      "requestUrlTemplate": "/api/v2/chats/users/${input.USER_ID}/messages",
+      "requestType": "POST",
+      "headers": {},
+      "requestTemplate": "{\"message\": \"$esc.jsonString(${input.MESSAGE})\"}"
+    },
+    "response": {
+      "translationMap": {
+        "id": "$.id"
+      },
+      "translationMapDefaults": {
+        "id": "\"\""
+      },
+      "successTemplate": "{\"messageId\": \"${id}\"}"
+    }
+  },
+  "contract": {
+    "input": {
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Input",
+        "type": "object",
+        "properties": {
+          "USER_ID": {
+            "type": "string",
+            "description": "Genesys Cloud user id of the agent to notify"
+          },
+          "MESSAGE": {
+            "type": "string",
+            "description": "Plain-text chat message"
+          }
+        },
+        "required": [
+          "USER_ID",
+          "MESSAGE"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "output": {
+      "successSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Output",
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      }
+    }
+  },
+  "secure": false
+}

@@ -1,0 +1,520 @@
+# =============================================================================
+# Unanswered Message Watchdog  -  Architect WORKFLOW (Archy YAML)
+# -----------------------------------------------------------------------------
+# STATUS: DRAFT ACCELERATOR. This file mirrors, action for action, the build
+# specification in docs/build-guide.md (which is the source of truth). It was
+# written against the Archy 2.44 flow schema but could not be validated against
+# a Genesys Cloud org from the authoring environment, so run
+#
+#     archy validate --file workflow/Unanswered-Message-Watchdog.archy.yaml
+#     archy publish  --file workflow/Unanswered-Message-Watchdog.archy.yaml
+#
+# and fix any key the validator rejects (the action names, expressions and
+# variable names are the part that matters; the YAML wrapper is boilerplate).
+# Alternatively, build the flow by hand from the guide in about 30 minutes.
+#
+# Prerequisites inside the org: the three data actions in ../data-actions
+# (imported under the "Genesys Cloud Data Actions" integration) and a group
+# named "Messaging Reply Alerts" for the fallback notification.
+# =============================================================================
+workflow:
+  name: Unanswered Message Watchdog
+  division: Home
+  description: >-
+    Started by a trigger when a message interaction reaches an agent. Polls the
+    conversation and alerts the agent (Collaborate chat, with group-chat fallback)
+    when the customer has been waiting too long for a reply. Exits when the
+    interaction leaves the agent.
+  startUpRef: "/workflow/tasks/task[Main_1]"
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      none: true
+  settingsErrorHandling:
+    errorHandling:
+      endWorkflow:
+        none: true
+  variables:
+    # ---- inputs: names MUST match the trigger event's top-level fields (case-sensitive)
+    - stringVariable:
+        name: Flow.conversationId
+        initialValue:
+          noValue: true
+        isInput: true
+        isOutput: false
+    - stringVariable:
+        name: Flow.userId
+        initialValue:
+          noValue: true
+        isInput: true
+        isOutput: false
+    - stringVariable:
+        name: Flow.participantId
+        initialValue:
+          noValue: true
+        isInput: true
+        isOutput: false
+    - stringVariable:
+        name: Flow.mediaType
+        initialValue:
+          noValue: true
+        isInput: true
+        isOutput: false
+    - stringVariable:
+        name: Flow.queueId
+        initialValue:
+          noValue: true
+        isInput: true
+        isOutput: false
+    # ---- tunables
+    - integerVariable:
+        name: Flow.warnAfterSeconds
+        initialValue:
+          lit: 45
+    - integerVariable:
+        name: Flow.criticalAfterSeconds
+        initialValue:
+          lit: 90
+    - integerVariable:
+        name: Flow.repeatEverySeconds
+        initialValue:
+          lit: 60
+    - integerVariable:
+        name: Flow.pollSeconds
+        initialValue:
+          lit: 20
+    - integerVariable:
+        name: Flow.maxRuntimeMinutes
+        initialValue:
+          lit: 480
+    - integerVariable:
+        name: Flow.alertingGracePolls
+        initialValue:
+          lit: 6
+    - integerVariable:
+        name: Flow.maxConsecutiveFailures
+        initialValue:
+          lit: 5
+    # ---- state
+    - integerVariable:
+        name: Flow.level
+        initialValue:
+          lit: 0
+    - stringVariable:
+        name: Flow.alertedFor
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.trackedSince
+        initialValue:
+          lit: ""
+    - integerVariable:
+        name: Flow.waitedSeconds
+        initialValue:
+          lit: 0
+    - integerVariable:
+        name: Flow.failures
+        initialValue:
+          lit: 0
+    - integerVariable:
+        name: Flow.graceLeft
+        initialValue:
+          lit: 0
+    - dateTimeVariable:
+        name: Flow.lastAlertAt
+        initialValue:
+          noValue: true
+    - dateTimeVariable:
+        name: Flow.deadline
+        initialValue:
+          noValue: true
+    - booleanVariable:
+        name: Flow.myConnected
+        initialValue:
+          lit: false
+    - booleanVariable:
+        name: Flow.myAlerting
+        initialValue:
+          lit: false
+    - stringVariable:
+        name: Flow.alertText
+        initialValue:
+          lit: ""
+    # ---- outputs of data action "Get Message Reply State"
+    - booleanVariable:
+        name: Flow.awaitingReply
+        initialValue:
+          lit: false
+    - booleanVariable:
+        name: Flow.anyAgentConnected
+        initialValue:
+          lit: false
+    - booleanVariable:
+        name: Flow.customerConnected
+        initialValue:
+          lit: false
+    - stringVariable:
+        name: Flow.waitingSince
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.lastInboundTime
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.lastOutboundTime
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.agentConnectedTime
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.agentStates
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.agentNames
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.customerName
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.customerParticipantId
+        initialValue:
+          lit: ""
+    - stringVariable:
+        name: Flow.channel
+        initialValue:
+          lit: ""
+  tasks:
+    # =========================================================================
+    - task:
+        name: Main
+        refId: Main_1
+        variables:
+          - integerVariable:
+              name: Task.i
+              initialValue:
+                lit: 0
+        actions:
+          - updateData:
+              name: Initialise
+              statements:
+                - dateTime:
+                    variable: Flow.deadline
+                    value:
+                      exp: AddMinutes(GetCurrentDateTimeUtc(), Flow.maxRuntimeMinutes)
+                - dateTime:
+                    variable: Flow.lastAlertAt
+                    value:
+                      exp: GetCurrentDateTimeUtc()
+                - integer:
+                    variable: Flow.graceLeft
+                    value:
+                      exp: Flow.alertingGracePolls
+          - loop:
+              name: Poll until the interaction leaves the agent
+              loopCount:
+                lit: 2000
+              currentIndex:
+                var: Task.i
+              outputs:
+                loop:
+                  actions:
+                    - wait:
+                        name: Wait between polls
+                        duration:
+                          exp: MakeDuration(0, 0, 0, Flow.pollSeconds)
+                    - callData:
+                        name: Get Message Reply State
+                        category: Genesys Cloud Data Actions
+                        dataAction: Get Message Reply State
+                        timeout:
+                          lit:
+                            seconds: 30
+                        inputs:
+                          - CONVERSATION_ID:
+                              exp: Flow.conversationId
+                        successOutputs:
+                          - awaitingReply:
+                              var: Flow.awaitingReply
+                          - anyAgentConnected:
+                              var: Flow.anyAgentConnected
+                          - customerConnected:
+                              var: Flow.customerConnected
+                          - waitingSince:
+                              var: Flow.waitingSince
+                          - lastInboundTime:
+                              var: Flow.lastInboundTime
+                          - lastOutboundTime:
+                              var: Flow.lastOutboundTime
+                          - agentConnectedTime:
+                              var: Flow.agentConnectedTime
+                          - agentStates:
+                              var: Flow.agentStates
+                          - agentNames:
+                              var: Flow.agentNames
+                          - customerName:
+                              var: Flow.customerName
+                          - customerParticipantId:
+                              var: Flow.customerParticipantId
+                          - channel:
+                              var: Flow.channel
+                        outputs:
+                          failure:
+                            actions:
+                              - callTask:
+                                  name: Count failure
+                                  targetTaskRef: "/workflow/tasks/task[CountFailure_3]"
+                              - nextLoop:
+                                  name: Try again next poll
+                          timeout:
+                            actions:
+                              - callTask:
+                                  name: Count timeout
+                                  targetTaskRef: "/workflow/tasks/task[CountFailure_3]"
+                              - nextLoop:
+                                  name: Try again next poll
+                    - updateData:
+                        name: Evaluate my participant
+                        statements:
+                          - boolean:
+                              variable: Flow.myConnected
+                              value:
+                                exp: Find(Flow.agentStates, Append(Flow.userId, ":connected")) >= 0
+                          - boolean:
+                              variable: Flow.myAlerting
+                              value:
+                                exp: Find(Flow.agentStates, Append(Flow.userId, ":alerting")) >= 0
+                          - integer:
+                              variable: Flow.failures
+                              value:
+                                lit: 0
+                    - decision:
+                        name: Still my interaction?
+                        condition:
+                          exp: Flow.myConnected
+                        outputs:
+                          yes:
+                            actions: []
+                          no:
+                            actions:
+                              - decision:
+                                  name: Still ringing (not accepted yet)?
+                                  condition:
+                                    exp: Flow.myAlerting and Flow.graceLeft > 0
+                                  outputs:
+                                    yes:
+                                      actions:
+                                        - updateData:
+                                            name: Use one grace poll
+                                            statements:
+                                              - integer:
+                                                  variable: Flow.graceLeft
+                                                  value:
+                                                    exp: Flow.graceLeft - 1
+                                        - nextLoop:
+                                            name: Keep waiting for accept
+                                    no:
+                                      actions:
+                                        - exitLoop:
+                                            name: Interaction left this agent
+                    - decision:
+                        name: Past maximum runtime?
+                        condition:
+                          exp: GetCurrentDateTimeUtc() >= Flow.deadline
+                        outputs:
+                          yes:
+                            actions:
+                              - exitLoop:
+                                  name: Stop watching
+                          no:
+                            actions: []
+                    - decision:
+                        name: Customer waiting on me?
+                        condition:
+                          exp: Flow.awaitingReply
+                        outputs:
+                          yes:
+                            actions: []
+                          no:
+                            actions:
+                              - updateData:
+                                  name: Reset alert state
+                                  statements:
+                                    - integer:
+                                        variable: Flow.level
+                                        value:
+                                          lit: 0
+                                    - string:
+                                        variable: Flow.alertedFor
+                                        value:
+                                          lit: ""
+                                    - integer:
+                                        variable: Flow.waitedSeconds
+                                        value:
+                                          lit: 0
+                              - nextLoop:
+                                  name: Nothing to do
+                    - updateData:
+                        name: Track the wait
+                        statements:
+                          - integer:
+                              variable: Flow.waitedSeconds
+                              value:
+                                exp: If(Flow.trackedSince == Flow.waitingSince, Flow.waitedSeconds + Flow.pollSeconds, 0)
+                          - string:
+                              variable: Flow.trackedSince
+                              value:
+                                exp: Flow.waitingSince
+                          - integer:
+                              variable: Flow.level
+                              value:
+                                exp: If(Flow.alertedFor != "" and Flow.alertedFor != Flow.waitingSince, 0, Flow.level)
+                    - decision:
+                        name: Critical threshold reached?
+                        condition:
+                          exp: AddSeconds(ToDateTime(Flow.waitingSince), Flow.criticalAfterSeconds) <= GetCurrentDateTimeUtc()
+                        outputs:
+                          yes:
+                            actions:
+                              - decision:
+                                  name: Send critical alert now?
+                                  condition:
+                                    exp: Flow.level < 2 or (Flow.repeatEverySeconds > 0 and AddSeconds(Flow.lastAlertAt, Flow.repeatEverySeconds) <= GetCurrentDateTimeUtc())
+                                  outputs:
+                                    yes:
+                                      actions:
+                                        - updateData:
+                                            name: Compose critical alert
+                                            statements:
+                                              - string:
+                                                  variable: Flow.alertText
+                                                  value:
+                                                    exp: >-
+                                                      Append("🔴 REPLY NEEDED: ", Flow.customerName, " (", Flow.channel, ") has been waiting for your reply for more than ", ToString(Flow.criticalAfterSeconds), " seconds. Please open the interaction and respond.")
+                                              - integer:
+                                                  variable: Flow.level
+                                                  value:
+                                                    lit: 2
+                                              - dateTime:
+                                                  variable: Flow.lastAlertAt
+                                                  value:
+                                                    exp: GetCurrentDateTimeUtc()
+                                              - string:
+                                                  variable: Flow.alertedFor
+                                                  value:
+                                                    exp: Flow.waitingSince
+                                        - callTask:
+                                            name: Notify agent (critical)
+                                            targetTaskRef: "/workflow/tasks/task[NotifyAgent_2]"
+                                    no:
+                                      actions: []
+                          no:
+                            actions:
+                              - decision:
+                                  name: Warning threshold reached?
+                                  condition:
+                                    exp: Flow.level < 1 and AddSeconds(ToDateTime(Flow.waitingSince), Flow.warnAfterSeconds) <= GetCurrentDateTimeUtc()
+                                  outputs:
+                                    yes:
+                                      actions:
+                                        - updateData:
+                                            name: Compose warning alert
+                                            statements:
+                                              - string:
+                                                  variable: Flow.alertText
+                                                  value:
+                                                    exp: >-
+                                                      Append("🟠 ", Flow.customerName, " (", Flow.channel, ") is waiting for your reply - more than ", ToString(Flow.warnAfterSeconds), " seconds without a response.")
+                                              - integer:
+                                                  variable: Flow.level
+                                                  value:
+                                                    lit: 1
+                                              - dateTime:
+                                                  variable: Flow.lastAlertAt
+                                                  value:
+                                                    exp: GetCurrentDateTimeUtc()
+                                              - string:
+                                                  variable: Flow.alertedFor
+                                                  value:
+                                                    exp: Flow.waitingSince
+                                        - callTask:
+                                            name: Notify agent (warning)
+                                            targetTaskRef: "/workflow/tasks/task[NotifyAgent_2]"
+                                    no:
+                                      actions: []
+          - endWorkflow:
+              name: Done
+    # =========================================================================
+    - task:
+        name: Notify Agent
+        refId: NotifyAgent_2
+        actions:
+          - callData:
+              name: Send Agent Chat Message
+              category: Genesys Cloud Data Actions
+              dataAction: Send Agent Chat Message
+              timeout:
+                lit:
+                  seconds: 20
+              inputs:
+                - USER_ID:
+                    exp: Flow.userId
+                - MESSAGE:
+                    exp: Flow.alertText
+              outputs:
+                success:
+                  actions:
+                    - endTask:
+                        name: Delivered by direct chat
+                failure:
+                  actions:
+                    - sendNotification:
+                        name: Fallback - team group chat
+                        notificationType: chat
+                        sendToGroup:
+                          lit: Messaging Reply Alerts
+                        chatMessage:
+                          exp: >-
+                            Append("@", Flow.agentNames, " - ", Flow.alertText)
+                timeout:
+                  actions:
+                    - sendNotification:
+                        name: Fallback - team group chat (timeout)
+                        notificationType: chat
+                        sendToGroup:
+                          lit: Messaging Reply Alerts
+                        chatMessage:
+                          exp: >-
+                            Append("@", Flow.agentNames, " - ", Flow.alertText)
+          - endTask:
+              name: Notified
+    # =========================================================================
+    - task:
+        name: Count Failure
+        refId: CountFailure_3
+        actions:
+          - updateData:
+              name: One more failure
+              statements:
+                - integer:
+                    variable: Flow.failures
+                    value:
+                      exp: Flow.failures + 1
+          - decision:
+              name: Too many consecutive failures?
+              condition:
+                exp: Flow.failures >= Flow.maxConsecutiveFailures
+              outputs:
+                yes:
+                  actions:
+                    - endWorkflow:
+                        name: Give up (API unavailable)
+                no:
+                  actions:
+                    - endTask:
+                        name: Retry on next poll

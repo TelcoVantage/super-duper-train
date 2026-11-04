@@ -1,0 +1,99 @@
+{
+  "name": "Get Message Reply State",
+  "integrationType": "purecloud-data-actions",
+  "actionType": "custom",
+  "config": {
+    "request": {
+      "requestUrlTemplate": "/api/v2/conversations/messages/${input.CONVERSATION_ID}",
+      "requestType": "GET",
+      "headers": {},
+      "requestTemplate": "${input.rawRequest}"
+    },
+    "response": {
+      "translationMap": {
+        "participants": "$.participants"
+      },
+      "translationMapDefaults": {
+        "participants": "[]"
+      },
+      "successTemplate": "## ---------------------------------------------------------------------------\n## Success template for data action \"Get Message Reply State\"\n## Runs inside Genesys Cloud (Velocity) against the raw response of\n##   GET /api/v2/conversations/messages/{conversationId}\n## and reduces it to the few scalars the Architect workflow needs.\n##\n## Rule implemented here (same rule the workflow relies on):\n##   waitingSince  = later of (last customer message, moment an agent connected)\n##   awaitingReply = an agent is connected AND no agent message at/after waitingSince\n## Receipts / events never count as messages. Timestamps are ISO-8601 UTC with the\n## same format, so string comparison (compareTo) orders them correctly.\n## ---------------------------------------------------------------------------\n#set($lastInbound = \"\")\n#set($lastOutbound = \"\")\n#set($agentConnectedTime = \"\")\n#set($agentStates = \"\")\n#set($agentNames = \"\")\n#set($anyAgentConnected = false)\n#set($customerConnected = false)\n#set($customerName = \"\")\n#set($customerParticipantId = \"\")\n#set($channel = \"\")\n#set($inboundCount = 0)\n#foreach($p in $participants)\n#set($purpose = \"$!{p.purpose}\")\n#set($pstate = \"$!{p.state}\")\n#if($purpose == \"customer\" || $purpose == \"external\")\n#if($customerName == \"\")#set($customerName = \"$!{p.name}\")#end\n#if($customerParticipantId == \"\")#set($customerParticipantId = \"$!{p.id}\")#end\n#if($pstate == \"connected\")#set($customerConnected = true)#end\n#if($channel == \"\" && $p.type)#set($channel = \"$!{p.type}\")#end\n#end\n#if($purpose == \"agent\" || $purpose == \"user\")\n#if($p.user && $p.user.id)\n#set($entry = \"$!{p.user.id}:$pstate\")\n#if($agentStates == \"\")#set($agentStates = $entry)#else#set($agentStates = \"$agentStates;$entry\")#end\n#end\n#if($pstate == \"connected\")\n#set($anyAgentConnected = true)\n#if($p.name)\n#set($pname = \"$!{p.name}\")\n#if($agentNames == \"\")#set($agentNames = $pname)#else#set($agentNames = \"$agentNames; $pname\")#end\n#end\n#if($p.connectedTime)\n#set($ct = $p.connectedTime)\n#if($agentConnectedTime == \"\" || $ct.compareTo($agentConnectedTime) > 0)#set($agentConnectedTime = $ct)#end\n#end\n#if($channel == \"\" && $p.type)#set($channel = \"$!{p.type}\")#end\n#end\n#end\n#foreach($m in $p.messages)\n#set($ignore = false)\n#set($mtype = \"\")\n#if($m.messageMetadata && $m.messageMetadata.type)#set($mtype = \"$!{m.messageMetadata.type}\")#end\n#if($mtype == \"Receipt\" || $mtype == \"Event\")#set($ignore = true)#end\n#set($mstatus = \"$!{m.messageStatus}\")\n#if($mstatus == \"removed\" || $mstatus == \"failed\")#set($ignore = true)#end\n#if(!$ignore && $m.messageTime)\n#set($mtime = $m.messageTime)\n#if($mstatus == \"received\")\n#if($lastInbound == \"\" || $mtime.compareTo($lastInbound) > 0)#set($lastInbound = $mtime)#end\n#set($inboundCount = $inboundCount + 1)\n#else\n#if($lastOutbound == \"\" || $mtime.compareTo($lastOutbound) > 0)#set($lastOutbound = $mtime)#end\n#end\n#end\n#end\n#end\n#set($waitingSince = $agentConnectedTime)\n#if($lastInbound != \"\")\n#if($waitingSince == \"\")#set($waitingSince = $lastInbound)#elseif($lastInbound.compareTo($waitingSince) > 0)#set($waitingSince = $lastInbound)#end\n#end\n#set($awaitingReply = false)\n#if($anyAgentConnected && $waitingSince != \"\")\n#if($lastOutbound == \"\")#set($awaitingReply = true)#elseif($lastOutbound.compareTo($waitingSince) < 0)#set($awaitingReply = true)#end\n#end\n{\n  \"anyAgentConnected\": $anyAgentConnected,\n  \"customerConnected\": $customerConnected,\n  \"awaitingReply\": $awaitingReply,\n  \"waitingSince\": \"$waitingSince\",\n  \"lastInboundTime\": \"$lastInbound\",\n  \"lastOutboundTime\": \"$lastOutbound\",\n  \"agentConnectedTime\": \"$agentConnectedTime\",\n  \"agentStates\": \"$agentStates\",\n  \"agentNames\": \"$esc.jsonString($agentNames)\",\n  \"customerName\": \"$esc.jsonString($customerName)\",\n  \"customerParticipantId\": \"$customerParticipantId\",\n  \"channel\": \"$channel\",\n  \"inboundMessageCount\": $inboundCount\n}\n"
+    }
+  },
+  "contract": {
+    "input": {
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Input",
+        "type": "object",
+        "properties": {
+          "CONVERSATION_ID": {
+            "type": "string",
+            "description": "Conversation id of the message interaction"
+          }
+        },
+        "required": [
+          "CONVERSATION_ID"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "output": {
+      "successSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Output",
+        "type": "object",
+        "properties": {
+          "anyAgentConnected": {
+            "type": "boolean",
+            "description": "True while any agent participant is connected"
+          },
+          "customerConnected": {
+            "type": "boolean"
+          },
+          "awaitingReply": {
+            "type": "boolean",
+            "description": "True when the customer is waiting on an agent reply"
+          },
+          "waitingSince": {
+            "type": "string",
+            "description": "ISO-8601 UTC; later of last customer message and agent connect time ('' if none)"
+          },
+          "lastInboundTime": {
+            "type": "string"
+          },
+          "lastOutboundTime": {
+            "type": "string"
+          },
+          "agentConnectedTime": {
+            "type": "string"
+          },
+          "agentStates": {
+            "type": "string",
+            "description": "'userId:state;userId:state' for every agent participant"
+          },
+          "agentNames": {
+            "type": "string",
+            "description": "Display names of the connected agent(s), '; ' separated"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerParticipantId": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string",
+            "description": "webmessaging, sms, whatsapp, facebook, instagram, line, open, apple ..."
+          },
+          "inboundMessageCount": {
+            "type": "integer",
+            "description": "Customer message entries seen across participants (informational, may double count)"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      }
+    }
+  },
+  "secure": false
+}
