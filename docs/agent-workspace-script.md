@@ -1,0 +1,107 @@
+# Showing the wait status in the Agent Workspace (native Script)
+
+The chat toast is the *push* alert. This page adds a second, in-context display:
+a status banner on the **Script** panel of the Agent Workspace that tells the
+agent, for the interaction they are looking at, whether the customer is waiting
+and since when – built only with Genesys Cloud Scripts and participant data.
+
+```
+ workflow decides warn / critical / cleared
+        │ data action "Set Watchdog Status"
+        ▼
+ PATCH …/participants/{customer}/attributes   rw_status · rw_level · rw_critical · rw_since · rw_updated
+        │
+        ▼ (script input variables read participant data)
+ Script page "Reply Watch":  🔴 banner (Visible = rw_critical) · status text · "Check now" button
+```
+
+## What Scripts can and cannot do (verified against the Genesys Cloud help)
+
+| Capability | Native Script support |
+|---|---|
+| Show text, colours, images, buttons; hide/show a component with the **Visible** property bound to a Boolean variable | Yes |
+| Read conversation participant data into **input variables** | Yes – but *"input variables are only fetched once on script load; they do not update as conversation updates come in"* |
+| Re-read participant data on demand | Yes – the **Scripter.Refresh Input Variables** action |
+| Run actions automatically | Only on **page load** (every page switch, **not** when the agent switches interactions and comes back) and on component click/change |
+| Pop a modal message | Yes – **Scripter.Alert** |
+| Conditional steps | Yes – custom actions support **If/Else** on a variable or dynamic expression |
+| Timers / polling / background execution | **No.** Genesys announced a *"Wait until"* script action (monitor a variable and proceed when it becomes true) in its March 2025 *Upcoming enhancements to Agent Scripting*; check whether it has reached your org – if it has, see "If Wait until is available" below. |
+| Call a data action | Yes – a custom action step can run a data action and map its outputs to script variables |
+
+So: the banner is **always right when it is looked at after a refresh**, and it refreshes on script load, on page load, and when the agent presses *Check now*. The chat toast remains the thing that interrupts the agent; the banner is what they see when they land on the interaction.
+
+## 1. Participant data written by the workflow
+
+The workflow's *Write Status* task calls data action **Set Watchdog Status** (see `data-actions/Set-Watchdog-Status.json`) on the **customer** participant whenever an alert is sent and when the alert clears:
+
+| Attribute | Example | Used for |
+|---|---|---|
+| `rw_status` | `🔴 REPLY NEEDED: Jane Doe (webmessaging) has been waiting for your reply for more than 90 seconds…` | banner text |
+| `rw_level` | `0` / `1` / `2` | colour / which banner |
+| `rw_critical` | `true` / `false` | the red banner's *Visible* property |
+| `rw_since` | `2026-11-04T09:12:33.000Z` | "waiting since" |
+| `rw_updated` | `2026-11-04T09:14:05.000Z` | lets the agent see how fresh the value is |
+
+The PATCH merges keys into the participant's existing attributes (it does not replace other participant data); confirm once on a test conversation in your org with *GET /api/v2/conversations/messages/{id}* before and after.
+
+## 2. Build the script
+
+**Admin › Digital and Telephony › Interaction Assets › Scripts › + Add** – name `Reply Watch`, enable the **Message** channel in the script properties (and Chat if you still use legacy chat).
+
+### 2.1 Variables (Script › Variables)
+
+| Name | Type | Input | Output | Default |
+|---|---|---|---|---|
+| `rw_status` | String | **Yes** | No | `No customer message is waiting.` |
+| `rw_level` | String | **Yes** | No | `0` |
+| `rw_critical` | Boolean | **Yes** | No | `false` |
+| `rw_since` | String | **Yes** | No | *(empty)* |
+| `rw_updated` | String | **Yes** | No | *(empty)* |
+
+Input variables are matched to participant attributes **by name**, on whichever participant carries them (normally the customer participant) – which is exactly where the workflow writes.
+
+Add a **dynamic variable** `rw_isWarning` with the expression `{{rw_level}} == "1"` (used for the amber banner).
+
+### 2.2 Custom action "Check reply status" (Script › Actions › Add Action)
+
+Steps, in order:
+
+1. **Scripter.Refresh Input Variables**
+2. **If/Else** – Left `rw_critical` · operator *equals* · Right `true`
+   * True branch: **Scripter.Alert** with text `{{rw_status}}`
+   * Else: nothing
+
+### 2.3 Page "Reply Watch" (make it the start page)
+
+| Component | Properties |
+|---|---|
+| **Text** (read-only) "🔴 banner" | Text `{{rw_status}}` · bold, white on red background · **Visible** = variable `rw_critical` |
+| **Text** "🟠 banner" | Text `{{rw_status}}` · black on amber · **Visible** = variable `rw_isWarning` |
+| **Text** "detail" | `Waiting since {{rw_since}} · status updated {{rw_updated}}` · small, grey |
+| **Button** "Check now" | Click action = **Check reply status** |
+| *(your normal script content below)* | |
+
+Page **Properties › Page Load Action** = **Check reply status**, so the banner refreshes every time the agent switches to this page (and when the script first loads).
+
+Publish the script.
+
+### 2.4 Attach it to messaging
+
+* **Admin › Contact Center › Queues › queue › Default Script**: select *Reply Watch* (or set the script in your Architect in-queue message flow if you already use one).
+* **Admin › Contact Center › Panel Manager**: set the default panel for **Message** interactions to **Script**, so the banner is on screen without the agent opening the tool (the Panel Manager affects all queues for all agents with the *Agent UI › Default Panels › View* permission).
+
+## 3. Agent experience
+
+1. A message interaction connects: the script loads, banner hidden, text *No customer message is waiting.*
+2. The agent moves to another interaction. 45 s later the Collaborate chat toast arrives. At the same moment the workflow wrote `rw_level=1`.
+3. The agent opens the interaction. If they land on the *Reply Watch* page (default panel = Script, start page = Reply Watch) the page-load action re-reads the attributes and the amber banner shows. If the script was already open on that page, they press **Check now** (or simply reply – the toast told them why).
+4. At 90 s the red banner and a modal **Alert** appear the next time the page loads or *Check now* is pressed.
+5. After the agent replies the workflow writes `✅ Replied…` with level 0; the next refresh hides the banners.
+
+## 4. If "Wait until" is available in your org
+
+The announced *Wait until* script action waits for a variable/expression to become true. If your scripts toolbox has it, add a custom action **Watch**: *Refresh Input Variables* → *Wait until* `{{rw_level}} != "0"` → *Alert* `{{rw_status}}` and run it from the page-load action. Whether the action re-fetches participant data while waiting, or only evaluates script variables, determines if a refresh loop is possible; test it on a sandbox script before relying on it.
+
+## 5. Alternative without participant data
+
+If you prefer not to write participant data, make the *Check reply status* action call the **Get Message Reply State** data action directly (Script › Actions › step type *Data Action*, input `CONVERSATION_ID` = `{{Scripter.Interaction ID}}`), map `awaitingReply`, `waitingSince`, `customerName` to script variables and build the banners on those. Same refresh rules apply.

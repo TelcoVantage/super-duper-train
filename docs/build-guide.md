@@ -48,12 +48,14 @@ Agents need nothing new. They receive the alert as a Genesys Cloud **Collaborate
 |---|---|
 | `data-actions/Get-Message-Reply-State.json` | Reads the conversation and returns *is the customer waiting on an agent, since when, which agents are connected, customer name, channel*. All the logic is in its success template (Velocity) – see `data-actions/templates/`. |
 | `data-actions/Send-Agent-Chat-Message.json` | Sends a Collaborate direct chat message to one user – the pop-up the agent sees. |
+| `data-actions/Set-Watchdog-Status.json` | Writes the alert status (`rw_status`, `rw_level`, `rw_critical`, `rw_since`, `rw_updated`) into the customer participant's attributes so the agent **script** can display it – see [agent-workspace-script.md](agent-workspace-script.md). The OAuth role needs *Conversation › Communication › Edit* for this PATCH. |
 | `data-actions/Set-Participant-Attribute.json` | Optional, for de-duplication (section 8). |
 
 After each import, click the action › **Setup › Test**:
 
 * *Get Message Reply State*: paste the id of a live or recent message conversation (Performance › Interactions › open one › the id is in the URL). You should see `awaitingReply`, `waitingSince`, `agentStates` such as `b3c1…:connected`, `customerName`, `channel`. If `agentStates` is empty on a live conversation, the OAuth role is missing *Conversation › Communication › View*.
 * *Send Agent Chat Message*: use your own user id (Admin › People › you › the id is in the URL) and a short message. **You must receive a chat toast in the Genesys Cloud UI.** If the API refuses the call (403/400) because a client-credentials token cannot send user chat, keep the action (the workflow handles failure) and rely on the group-chat fallback in step 3; or point the action at `POST /api/v2/conversations/emails/agentless` to e-mail the agent instead.
+* *Set Watchdog Status*: run it against a test conversation with the customer participant id, then `GET /api/v2/conversations/messages/{id}` in the API Explorer: the `rw_*` keys must appear under the customer participant's `attributes` **next to** any existing keys (the PATCH merges; if your org replaces instead, keep the other participant data out of that participant or drop this action and use the script's direct data-action variant in the script guide § 5).
 * **Save & Publish** each action (an un-published action is invisible to Architect).
 
 > The success template uses only Velocity features the Genesys *Velocity macros for data actions* article documents (`#set`, `#foreach`, `#if`, string methods, `$esc.jsonString`). `python3 test/test_reply_state_template.py` renders the same template against sample conversations if you change it.
@@ -125,7 +127,7 @@ Create these **Flow** variables. Inputs must be marked *Input: Yes* and must be 
 | 2.3 | **Update Data** "Evaluate my participant" | `Flow.myConnected` = `Find(Flow.agentStates, Append(Flow.userId, ":connected")) >= 0` · `Flow.myAlerting` = `Find(Flow.agentStates, Append(Flow.userId, ":alerting")) >= 0` · `Flow.failures` = `0` |
 | 2.4 | **Decision** "Still my interaction?" | `Flow.myConnected` → **No**: *Decision* `Flow.myAlerting and Flow.graceLeft > 0` → Yes: *Update Data* `Flow.graceLeft` = `Flow.graceLeft - 1`, **Next Loop**; No: **Exit Loop** (transferred, disconnected, or never accepted). **Yes**: continue. |
 | 2.5 | **Decision** "Past maximum runtime?" | `GetCurrentDateTimeUtc() >= Flow.deadline` → Yes: **Exit Loop**. |
-| 2.6 | **Decision** "Customer waiting on me?" | `Flow.awaitingReply` → **No**: *Update Data* `Flow.level` = `0`, `Flow.alertedFor` = `""`, `Flow.waitedSeconds` = `0`, then **Next Loop**. **Yes**: continue. |
+| 2.6 | **Decision** "Customer waiting on me?" | `Flow.awaitingReply` → **No**: *Decision* `Flow.level > 0` → Yes: *Update Data* `Flow.alertText` = `"✅ Replied - no customer message waiting"`, `Flow.level` = `0`, then **Call Task** *Write Status* (clears the script banner). Then, on both paths: *Update Data* `Flow.level` = `0`, `Flow.alertedFor` = `""`, `Flow.waitedSeconds` = `0`, then **Next Loop**. **Yes**: continue. |
 | 2.7 | **Update Data** "Track the wait" (statements in this order) | `Flow.waitedSeconds` = `If(Flow.trackedSince == Flow.waitingSince, Flow.waitedSeconds + Flow.pollSeconds, 0)` · `Flow.trackedSince` = `Flow.waitingSince` · `Flow.level` = `If(Flow.alertedFor != "" and Flow.alertedFor != Flow.waitingSince, 0, Flow.level)` ← a *new* customer message re-arms the alerts |
 | 2.8 | **Decision** "Critical threshold reached?" | `AddSeconds(ToDateTime(Flow.waitingSince), Flow.criticalAfterSeconds) <= GetCurrentDateTimeUtc()` |
 | 2.8-Yes | **Decision** "Send critical alert now?" | `Flow.level < 2 or (Flow.repeatEverySeconds > 0 and AddSeconds(Flow.lastAlertAt, Flow.repeatEverySeconds) <= GetCurrentDateTimeUtc())` → Yes: *Update Data* `Flow.alertText` = `Append("🔴 REPLY NEEDED: ", Flow.customerName, " (", Flow.channel, ") has been waiting for your reply for more than ", ToString(Flow.criticalAfterSeconds), " seconds. Please open the interaction and respond.")`, `Flow.level` = `2`, `Flow.lastAlertAt` = `GetCurrentDateTimeUtc()`, `Flow.alertedFor` = `Flow.waitingSince`; then **Call Task** *Notify Agent*. |
@@ -136,13 +138,24 @@ Create these **Flow** variables. Inputs must be marked *Input: Yes* and must be 
 
 | # | Action | Configuration |
 |---|---|---|
+| 0 | **Call Task** *Write Status* | puts the same text on the agent script banner (section 4.4) |
 | 1 | **Call Data Action** "Send Agent Chat Message" | inputs `USER_ID` = `Flow.userId`, `MESSAGE` = `Flow.alertText`, timeout 20 s. **Success**: *End Task*. |
 | 1-Failure / 1-Timeout | **Send Notification** | Notification type **Chat**, *Send to Group* = **Messaging Reply Alerts**, *Chat Message* (expression) = `Append("@", Flow.agentNames, " - ", Flow.alertText)` |
 | 2 | **End Task** | |
 
 Optional extra fallback: add a second **Send Notification** of type **Email** to the team leads.
 
-### 4.4 Flow error handling and publish
+### 4.4 Task "Write Status" (feeds the Agent Workspace script)
+
+| # | Action | Configuration |
+|---|---|---|
+| 1 | **Decision** "Know the customer participant?" | `Flow.customerParticipantId != ""` → No: *End Task* |
+| 2 | **Call Data Action** "Set Watchdog Status" | `CONVERSATION_ID` = `Flow.conversationId` · `PARTICIPANT_ID` = `Flow.customerParticipantId` · `STATUS` = `Flow.alertText` · `LEVEL` = `ToString(Flow.level)` · `CRITICAL` = `If(Flow.level == 2, "true", "false")` · `SINCE` = `If(Flow.level > 0, Flow.waitingSince, "")` · `UPDATED` = `ToString(GetCurrentDateTimeUtc())`. Failure and Timeout paths: nothing (the banner is best-effort; the chat alert still goes out). |
+| 3 | **End Task** | |
+
+The script that displays these values is described in **[agent-workspace-script.md](agent-workspace-script.md)**. If you do not want the banner, skip this task and the two *Call Task* steps that reference it.
+
+### 4.5 Flow error handling and publish
 
 * Flow settings › *Error handling*: **End Workflow** (an unexpected error must not leave a stuck instance).
 * **Save**, then **Publish**. Note the flow id in the browser URL – the trigger needs it.
@@ -184,6 +197,7 @@ The same definition is in `triggers/message-connected-to-agent.trigger.json` for
 2. Log in as an agent on a pilot messaging queue and send a test web message / SMS.
 3. Accept it and **do not reply**. After ~45 s (plus up to one poll interval) a Collaborate chat toast arrives: *🟠 Jane Doe (webmessaging) is waiting for your reply…*. After ~90 s the 🔴 message arrives and repeats every 60 s.
 4. Reply: no further alerts. Send another customer message and stay silent: alerts start again from zero.
+4b. With the *Reply Watch* script attached (script guide): open the interaction after the toast – the page-load action refreshes the banner (amber at 45 s, red + modal at 90 s); after you reply, *Check now* clears it.
 5. Transfer the interaction to another agent: the first agent gets no more alerts, the second agent's own workflow instance takes over.
 6. Watch the instances in **Admin › Architect › the workflow › Executions** (or `GET /api/v2/flows/executions`). Each message interaction has exactly one running instance per agent participant, and it ends when the interaction leaves the agent.
 

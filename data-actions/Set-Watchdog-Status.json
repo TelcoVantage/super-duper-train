@@ -1,0 +1,79 @@
+{
+  "name": "Set Watchdog Status",
+  "integrationType": "purecloud-data-actions",
+  "actionType": "custom",
+  "config": {
+    "request": {
+      "requestUrlTemplate": "/api/v2/conversations/messages/${input.CONVERSATION_ID}/participants/${input.PARTICIPANT_ID}/attributes",
+      "requestType": "PATCH",
+      "headers": {},
+      "requestTemplate": "{\"attributes\": {\"rw_status\": \"$esc.jsonString(${input.STATUS})\", \"rw_level\": \"${input.LEVEL}\", \"rw_critical\": \"${input.CRITICAL}\", \"rw_since\": \"${input.SINCE}\", \"rw_updated\": \"${input.UPDATED}\"}}"
+    },
+    "response": {
+      "translationMap": {},
+      "translationMapDefaults": {},
+      "successTemplate": "{\"ok\": true}"
+    }
+  },
+  "contract": {
+    "input": {
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Input",
+        "type": "object",
+        "properties": {
+          "CONVERSATION_ID": {
+            "type": "string"
+          },
+          "PARTICIPANT_ID": {
+            "type": "string",
+            "description": "Customer participant id (survives transfers; scripts read attributes from any participant)"
+          },
+          "STATUS": {
+            "type": "string",
+            "description": "Banner text shown in the agent script"
+          },
+          "LEVEL": {
+            "type": "string",
+            "description": "0 = ok, 1 = warning, 2 = critical"
+          },
+          "CRITICAL": {
+            "type": "string",
+            "description": "true / false, drives the red banner's Visible property"
+          },
+          "SINCE": {
+            "type": "string",
+            "description": "ISO-8601 time the customer has been waiting since ('' when not waiting)"
+          },
+          "UPDATED": {
+            "type": "string",
+            "description": "ISO-8601 time of this update"
+          }
+        },
+        "required": [
+          "CONVERSATION_ID",
+          "PARTICIPANT_ID",
+          "STATUS",
+          "LEVEL",
+          "CRITICAL"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "output": {
+      "successSchema": {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "Output",
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      }
+    }
+  },
+  "secure": false
+}

@@ -97,6 +97,40 @@ ACTIONS = {
         required_inputs=["USER_ID", "MESSAGE"],
         outputs={"messageId": S},
     ),
+    "Set-Watchdog-Status.json": action(
+        name="Set Watchdog Status",
+        request={
+            "requestUrlTemplate": "/api/v2/conversations/messages/${input.CONVERSATION_ID}/participants/${input.PARTICIPANT_ID}/attributes",
+            "requestType": "PATCH",
+            "headers": {},
+            # Keys are read by the agent script as input variables of the same name.
+            "requestTemplate": (
+                '{"attributes": {'
+                '"rw_status": "$esc.jsonString(${input.STATUS})", '
+                '"rw_level": "${input.LEVEL}", '
+                '"rw_critical": "${input.CRITICAL}", '
+                '"rw_since": "${input.SINCE}", '
+                '"rw_updated": "${input.UPDATED}"'
+                '}}'
+            ),
+        },
+        response={
+            "translationMap": {},
+            "translationMapDefaults": {},
+            "successTemplate": '{"ok": true}',
+        },
+        inputs={
+            "CONVERSATION_ID": S,
+            "PARTICIPANT_ID": {**S, "description": "Customer participant id (survives transfers; scripts read attributes from any participant)"},
+            "STATUS": {**S, "description": "Banner text shown in the agent script"},
+            "LEVEL": {**S, "description": "0 = ok, 1 = warning, 2 = critical"},
+            "CRITICAL": {**S, "description": "true / false, drives the red banner's Visible property"},
+            "SINCE": {**S, "description": "ISO-8601 time the customer has been waiting since ('' when not waiting)"},
+            "UPDATED": {**S, "description": "ISO-8601 time of this update"},
+        },
+        required_inputs=["CONVERSATION_ID", "PARTICIPANT_ID", "STATUS", "LEVEL", "CRITICAL"],
+        outputs={"ok": B},
+    ),
     "Set-Participant-Attribute.json": action(
         name="Set Participant Attribute",
         request={

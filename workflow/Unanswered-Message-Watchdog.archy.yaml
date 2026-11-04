@@ -342,6 +342,29 @@ workflow:
                             actions: []
                           no:
                             actions:
+                              - decision:
+                                  name: Was an alert showing?
+                                  condition:
+                                    exp: Flow.level > 0
+                                  outputs:
+                                    yes:
+                                      actions:
+                                        - updateData:
+                                            name: Compose cleared status
+                                            statements:
+                                              - string:
+                                                  variable: Flow.alertText
+                                                  value:
+                                                    lit: "✅ Replied - no customer message waiting"
+                                              - integer:
+                                                  variable: Flow.level
+                                                  value:
+                                                    lit: 0
+                                        - callTask:
+                                            name: Clear status in the agent script
+                                            targetTaskRef: "/workflow/tasks/task[WriteStatus_4]"
+                                    no:
+                                      actions: []
                               - updateData:
                                   name: Reset alert state
                                   statements:
@@ -454,6 +477,9 @@ workflow:
         name: Notify Agent
         refId: NotifyAgent_2
         actions:
+          - callTask:
+              name: Show status in the agent script
+              targetTaskRef: "/workflow/tasks/task[WriteStatus_4]"
           - callData:
               name: Send Agent Chat Message
               category: Genesys Cloud Data Actions
@@ -493,6 +519,49 @@ workflow:
                             Append("@", Flow.agentNames, " - ", Flow.alertText)
           - endTask:
               name: Notified
+    # =========================================================================
+    - task:
+        name: Write Status
+        refId: WriteStatus_4
+        actions:
+          - decision:
+              name: Know the customer participant?
+              condition:
+                exp: Flow.customerParticipantId != ""
+              outputs:
+                yes:
+                  actions:
+                    - callData:
+                        name: Set Watchdog Status
+                        category: Genesys Cloud Data Actions
+                        dataAction: Set Watchdog Status
+                        timeout:
+                          lit:
+                            seconds: 20
+                        inputs:
+                          - CONVERSATION_ID:
+                              exp: Flow.conversationId
+                          - PARTICIPANT_ID:
+                              exp: Flow.customerParticipantId
+                          - STATUS:
+                              exp: Flow.alertText
+                          - LEVEL:
+                              exp: ToString(Flow.level)
+                          - CRITICAL:
+                              exp: If(Flow.level == 2, "true", "false")
+                          - SINCE:
+                              exp: If(Flow.level > 0, Flow.waitingSince, "")
+                          - UPDATED:
+                              exp: ToString(GetCurrentDateTimeUtc())
+                        outputs:
+                          failure:
+                            actions: []
+                          timeout:
+                            actions: []
+                no:
+                  actions: []
+          - endTask:
+              name: Status written
     # =========================================================================
     - task:
         name: Count Failure

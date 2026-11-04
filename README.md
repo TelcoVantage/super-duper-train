@@ -22,6 +22,9 @@
                                                            │ DATA ACTION  Send Agent Chat │ → 🔔 toast to the agent
                                                            │ POST /api/v2/chats/users/{id}│
                                                            │   fallback: Send Notification│ → team group chat / e-mail
+                                                           ├──────────────────────────────┤
+                                                           │ DATA ACTION  Set Watchdog    │ → participant data rw_status / rw_level …
+                                                           │ Status (PATCH attributes)    │ → 🟥 banner on the agent's SCRIPT panel
                                                            └──────────────────────────────┘
 ```
 
@@ -35,13 +38,15 @@
 | agent replies | alerts stop; the next customer message restarts the clock from zero |
 | interaction transferred / ended | the instance for that agent ends by itself |
 
+**On the Agent Workspace itself**, a native *Reply Watch* script page shows a red/amber banner with the same status for the interaction the agent is looking at, refreshed on script load, page load and a *Check now* button (Scripts cannot poll, so the banner complements the toast rather than replacing it). Build steps: [docs/agent-workspace-script.md](docs/agent-workspace-script.md).
+
 The waiting clock starts at the **later** of the customer's latest message and the moment the interaction connected to the agent, so queue time is never charged to the agent, and a bot or previous agent's reply before hand-off does not count as *this* agent's reply. Read receipts and events are ignored.
 
 ## Why these building blocks (and not the others)
 
 | Native option | Verdict |
 |---|---|
-| **Scripts** (agent scripting) | No timers, no background execution, no view of other interactions. Cannot detect silence. |
+| **Scripts** (agent scripting) | No timers, no background execution, no view of other interactions – cannot *detect* silence. They can *display* it: input variables read participant data (refreshed on load / page load / button), components have a Visible property, and custom actions support If/Else + Alert. Used here as the in-context banner. |
 | **Alert rules** (Analytics › Alerting) with in-app toasts | Great delivery mechanism, but the available single-conversation metrics are handle/talk/hold/wait/alert/ACW – none measures "time since the customer's last message without an agent reply". |
 | **Queue inactivity handling** | Native timer when *either* side goes quiet; ends/reroutes the conversation and warns the agent one minute before. Recommended as a backstop (build guide § 6) but it cannot tell who wrote last. |
 | **Trigger + Workflow + Data Actions** | Triggers fire on agent connect, workflows can wait/loop for hours and call data actions, data actions can read the conversation and send a chat to the agent. This is the only native combination that can implement the rule. ✅ |
@@ -52,6 +57,7 @@ The waiting clock starts at the **later** of the customer's latest message and t
 data-actions/
   Get-Message-Reply-State.json      importable data action (reads the conversation, computes the wait)
   Send-Agent-Chat-Message.json      importable data action (Collaborate DM to the agent)
+  Set-Watchdog-Status.json          importable data action (writes rw_* participant data for the script banner)
   Set-Participant-Attribute.json    importable data action (optional de-duplication)
   templates/*.vm                    the Velocity success template, readable
   build_data_actions.py             regenerates the JSON from the templates
@@ -60,12 +66,14 @@ workflow/
 triggers/
   message-connected-to-agent.trigger.json  POST body for the trigger API + notes
 docs/build-guide.md                 click-by-click build, test, sizing, troubleshooting
+docs/agent-workspace-script.md      the Script-panel banner: variables, components, custom action, Panel Manager
 test/                               template unit tests + artifact validation
 ```
 
 ## Getting started
 
 1. Read **[docs/build-guide.md](docs/build-guide.md)** and follow it top to bottom (data actions → group → workflow → trigger → test).
+   Then **[docs/agent-workspace-script.md](docs/agent-workspace-script.md)** for the banner on the Script panel.
 2. Tune in one place: the workflow's `Flow.warnAfterSeconds`, `Flow.criticalAfterSeconds`, `Flow.repeatEverySeconds`, `Flow.pollSeconds` (and the matching Wait action).
 3. Pilot with a `queueId` condition on the trigger, then remove it.
 
