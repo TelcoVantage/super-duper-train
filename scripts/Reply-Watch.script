@@ -1,0 +1,823 @@
+{
+  "id": "3d48f24f-9b0d-51e1-9946-dcd3f7d5b85e",
+  "name": "Reply Watch",
+  "versionId": "665f6ef9-cfff-5f01-8124-25b629191abd",
+  "startPageId": "0ef9e5fa-4ab0-5293-ae75-9d83955540fd",
+  "pages": [
+    {
+      "id": "0ef9e5fa-4ab0-5293-ae75-9d83955540fd",
+      "name": "Reply Watch",
+      "properties": {
+        "onLoadAction": {
+          "typeName": "action",
+          "value": {
+            "actionName": "887eccc9-d414-536b-834e-f89633e13ce1",
+            "actionArgumentValues": []
+          }
+        },
+        "backgroundColor": {
+          "typeName": "null"
+        }
+      },
+      "dataVersion": 0,
+      "rootContainer": {
+        "type": "verticalStackContainer",
+        "properties": {
+          "margin": {
+            "typeName": "spacing",
+            "value": 0
+          },
+          "alignment": {
+            "typeName": "alignment",
+            "value": "start"
+          },
+          "width": {
+            "typeName": "sizing",
+            "value": {
+              "sizeType": "stretch",
+              "size": 100
+            }
+          },
+          "height": {
+            "typeName": "sizing",
+            "value": {
+              "sizeType": "stretch",
+              "size": 100
+            }
+          },
+          "visible": {
+            "typeName": "variable"
+          },
+          "preserveLayoutLocation": {
+            "typeName": "boolean",
+            "value": false
+          },
+          "backgroundColor": {
+            "typeName": "null"
+          },
+          "padding": {
+            "typeName": "spacing",
+            "value": 10
+          },
+          "childArrangement": {
+            "typeName": "childArrangement",
+            "value": "start"
+          },
+          "border": {
+            "typeName": "border",
+            "value": {
+              "width": 0,
+              "style": "solid",
+              "color": "000000"
+            }
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  6,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "stretch",
+                  "size": 100
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable",
+                "value": "8bc73450-91ae-58b8-b5f2-212812dee7fa"
+              },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "🔴 {{6f990677-a976-54a7-937a-544e0abc2cc4}}"
+              },
+              "bold": {
+                "typeName": "boolean",
+                "value": true
+              },
+              "italic": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "underline": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": {
+                "typeName": "integer",
+                "value": 14
+              },
+              "justification": {
+                "typeName": "text",
+                "value": "left"
+              },
+              "backgroundColor": {
+                "typeName": "color",
+                "value": "#d93025"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#ffffff"
+              },
+              "padding": {
+                "typeName": "spacing",
+                "value": 12
+              }
+            }
+          },
+          {
+            "type": "text",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  6,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "stretch",
+                  "size": 100
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable",
+                "value": "dcbb4863-04ea-57e4-8580-70d251d168e6"
+              },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "🟠 {{6f990677-a976-54a7-937a-544e0abc2cc4}}"
+              },
+              "bold": {
+                "typeName": "boolean",
+                "value": true
+              },
+              "italic": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "underline": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": {
+                "typeName": "integer",
+                "value": 13
+              },
+              "justification": {
+                "typeName": "text",
+                "value": "left"
+              },
+              "backgroundColor": {
+                "typeName": "color",
+                "value": "#f9a825"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#1d2430"
+              },
+              "padding": {
+                "typeName": "spacing",
+                "value": 12
+              }
+            }
+          },
+          {
+            "type": "text",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  2,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "stretch",
+                  "size": 100
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable"
+              },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "REPLY WATCH"
+              },
+              "bold": {
+                "typeName": "boolean",
+                "value": true
+              },
+              "italic": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "underline": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": {
+                "typeName": "integer",
+                "value": 11
+              },
+              "justification": {
+                "typeName": "text",
+                "value": "left"
+              },
+              "backgroundColor": {
+                "typeName": "null"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#2a60c8"
+              },
+              "padding": {
+                "typeName": "spacing",
+                "value": 0
+              }
+            }
+          },
+          {
+            "type": "text",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  6,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "stretch",
+                  "size": 100
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable"
+              },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "Status: {{6f990677-a976-54a7-937a-544e0abc2cc4}}"
+              },
+              "bold": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "italic": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "underline": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": {
+                "typeName": "integer",
+                "value": 12
+              },
+              "justification": {
+                "typeName": "text",
+                "value": "left"
+              },
+              "backgroundColor": {
+                "typeName": "null"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#334155"
+              },
+              "padding": {
+                "typeName": "spacing",
+                "value": 0
+              }
+            }
+          },
+          {
+            "type": "text",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  6,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "stretch",
+                  "size": 100
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable"
+              },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "Waiting since {{bfd65f77-7520-5844-b8dd-0bd9b5684d4c}}  ·  updated {{18f5d7a3-432d-5702-abf4-0554c4318deb}} (UTC)"
+              },
+              "bold": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "italic": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "underline": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": {
+                "typeName": "integer",
+                "value": 10
+              },
+              "justification": {
+                "typeName": "text",
+                "value": "left"
+              },
+              "backgroundColor": {
+                "typeName": "null"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#64748b"
+              },
+              "padding": {
+                "typeName": "spacing",
+                "value": 0
+              }
+            }
+          },
+          {
+            "type": "button",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  6,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable"
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "Check now"
+              },
+              "clickAction": {
+                "typeName": "action",
+                "value": {
+                  "actionName": "887eccc9-d414-536b-834e-f89633e13ce1",
+                  "actionArgumentValues": []
+                }
+              },
+              "backgroundColor": {
+                "typeName": "color",
+                "value": "#2a60c8"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#ffffff"
+              },
+              "disabled": {
+                "typeName": "variable"
+              }
+            }
+          },
+          {
+            "type": "text",
+            "properties": {
+              "margin": {
+                "typeName": "spacing",
+                "value": [
+                  0,
+                  0,
+                  6,
+                  0
+                ]
+              },
+              "alignment": {
+                "typeName": "alignment",
+                "value": "start"
+              },
+              "width": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "stretch",
+                  "size": 100
+                }
+              },
+              "height": {
+                "typeName": "sizing",
+                "value": {
+                  "sizeType": "auto"
+                }
+              },
+              "visible": {
+                "typeName": "variable"
+              },
+              "preserveLayoutLocation": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "text": {
+                "typeName": "interpolatedText",
+                "value": "The status refreshes when this page loads and when you press Check now. The chat pop-up tells you when to look."
+              },
+              "bold": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "italic": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "underline": {
+                "typeName": "boolean",
+                "value": false
+              },
+              "font": {
+                "typeName": "font",
+                "value": "Arial, \"Helvetica Neue\", Helvetica, sans-serif"
+              },
+              "fontSize": {
+                "typeName": "integer",
+                "value": 10
+              },
+              "justification": {
+                "typeName": "text",
+                "value": "left"
+              },
+              "backgroundColor": {
+                "typeName": "null"
+              },
+              "textColor": {
+                "typeName": "color",
+                "value": "#64748b"
+              },
+              "padding": {
+                "typeName": "spacing",
+                "value": 0
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "features": {
+    "dialer": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        },
+        "contactListId": {
+          "typeName": "text",
+          "value": ""
+        },
+        "onContactDataLoadAction": {
+          "typeName": "action",
+          "value": {}
+        }
+      }
+    },
+    "scripter": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": true
+        }
+      }
+    },
+    "screenPop": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": true
+        }
+      }
+    },
+    "callback": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        }
+      }
+    },
+    "chat": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": true
+        }
+      }
+    },
+    "email": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        }
+      }
+    },
+    "message": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": true
+        }
+      }
+    },
+    "bridge": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        }
+      }
+    },
+    "uuiData": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        }
+      }
+    },
+    "customerSecuredData": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        }
+      }
+    },
+    "list": {
+      "properties": {
+        "enabled": {
+          "typeName": "boolean",
+          "value": false
+        }
+      }
+    }
+  },
+  "variables": [
+    {
+      "id": "6f990677-a976-54a7-937a-544e0abc2cc4",
+      "name": "rw_status",
+      "description": "Banner text written by the Unanswered Message Watchdog workflow",
+      "type": {
+        "isDynamic": false,
+        "isList": false,
+        "name": "string"
+      },
+      "value": "No customer message is waiting.",
+      "input": true,
+      "output": false
+    },
+    {
+      "id": "d70aa829-936b-5092-b754-e38040af89d7",
+      "name": "rw_level",
+      "description": "0 = ok, 1 = warning, 2 = critical",
+      "type": {
+        "isDynamic": false,
+        "isList": false,
+        "name": "string"
+      },
+      "value": "0",
+      "input": true,
+      "output": false
+    },
+    {
+      "id": "8bc73450-91ae-58b8-b5f2-212812dee7fa",
+      "name": "rw_critical",
+      "description": "true while the critical banner should show",
+      "type": {
+        "isDynamic": false,
+        "isList": false,
+        "name": "boolean"
+      },
+      "value": false,
+      "input": true,
+      "output": false
+    },
+    {
+      "id": "dcbb4863-04ea-57e4-8580-70d251d168e6",
+      "name": "rw_warning",
+      "description": "true while the warning banner should show",
+      "type": {
+        "isDynamic": false,
+        "isList": false,
+        "name": "boolean"
+      },
+      "value": false,
+      "input": true,
+      "output": false
+    },
+    {
+      "id": "bfd65f77-7520-5844-b8dd-0bd9b5684d4c",
+      "name": "rw_since",
+      "description": "ISO-8601 UTC time the customer has been waiting since",
+      "type": {
+        "isDynamic": false,
+        "isList": false,
+        "name": "string"
+      },
+      "value": "",
+      "input": true,
+      "output": false
+    },
+    {
+      "id": "18f5d7a3-432d-5702-abf4-0554c4318deb",
+      "name": "rw_updated",
+      "description": "ISO-8601 UTC time the status was last written",
+      "type": {
+        "isDynamic": false,
+        "isList": false,
+        "name": "string"
+      },
+      "value": "",
+      "input": true,
+      "output": false
+    }
+  ],
+  "customActions": [
+    {
+      "id": "887eccc9-d414-536b-834e-f89633e13ce1",
+      "name": "Check reply status",
+      "action": {
+        "block": [
+          {
+            "type": "action",
+            "actionName": "scripter.refreshInputVariables",
+            "actionArgumentValues": []
+          },
+          {
+            "type": "if",
+            "condition": {
+              "type": "standard",
+              "leftHandSide": {
+                "typeName": "variable",
+                "value": "d70aa829-936b-5092-b754-e38040af89d7"
+              },
+              "operator": "equal",
+              "rightHandSide": {
+                "typeName": "interpolatedText",
+                "value": "2"
+              }
+            },
+            "ifBlock": [
+              {
+                "type": "action",
+                "actionName": "scripter.alert",
+                "actionArgumentValues": [
+                  {
+                    "typeName": "interpolatedText",
+                    "value": "{{6f990677-a976-54a7-937a-544e0abc2cc4}}"
+                  }
+                ]
+              }
+            ],
+            "elseBlock": []
+          }
+        ]
+      }
+    }
+  ],
+  "dataVersion": 0
+}

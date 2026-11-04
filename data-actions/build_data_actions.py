@@ -109,6 +109,7 @@ ACTIONS = {
                 '"rw_status": "$esc.jsonString(${input.STATUS})", '
                 '"rw_level": "${input.LEVEL}", '
                 '"rw_critical": "${input.CRITICAL}", '
+                '"rw_warning": "${input.WARNING}", '
                 '"rw_since": "${input.SINCE}", '
                 '"rw_updated": "${input.UPDATED}"'
                 '}}'
@@ -125,10 +126,11 @@ ACTIONS = {
             "STATUS": {**S, "description": "Banner text shown in the agent script"},
             "LEVEL": {**S, "description": "0 = ok, 1 = warning, 2 = critical"},
             "CRITICAL": {**S, "description": "true / false, drives the red banner's Visible property"},
+            "WARNING": {**S, "description": "true / false, drives the amber banner's Visible property"},
             "SINCE": {**S, "description": "ISO-8601 time the customer has been waiting since ('' when not waiting)"},
             "UPDATED": {**S, "description": "ISO-8601 time of this update"},
         },
-        required_inputs=["CONVERSATION_ID", "PARTICIPANT_ID", "STATUS", "LEVEL", "CRITICAL"],
+        required_inputs=["CONVERSATION_ID", "PARTICIPANT_ID", "STATUS", "LEVEL", "CRITICAL", "WARNING"],
         outputs={"ok": B},
     ),
     "Set-Participant-Attribute.json": action(

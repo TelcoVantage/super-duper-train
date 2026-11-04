@@ -48,7 +48,7 @@ Agents need nothing new. They receive the alert as a Genesys Cloud **Collaborate
 |---|---|
 | `data-actions/Get-Message-Reply-State.json` | Reads the conversation and returns *is the customer waiting on an agent, since when, which agents are connected, customer name, channel*. All the logic is in its success template (Velocity) – see `data-actions/templates/`. |
 | `data-actions/Send-Agent-Chat-Message.json` | Sends a Collaborate direct chat message to one user – the pop-up the agent sees. |
-| `data-actions/Set-Watchdog-Status.json` | Writes the alert status (`rw_status`, `rw_level`, `rw_critical`, `rw_since`, `rw_updated`) into the customer participant's attributes so the agent **script** can display it – see [agent-workspace-script.md](agent-workspace-script.md). The OAuth role needs *Conversation › Communication › Edit* for this PATCH. |
+| `data-actions/Set-Watchdog-Status.json` | Writes the alert status (`rw_status`, `rw_level`, `rw_critical`, `rw_warning`, `rw_since`, `rw_updated`) into the customer participant's attributes so the agent **script** can display it – see [agent-workspace-script.md](agent-workspace-script.md). The OAuth role needs *Conversation › Communication › Edit* for this PATCH. |
 | `data-actions/Set-Participant-Attribute.json` | Optional, for de-duplication (section 8). |
 
 After each import, click the action › **Setup › Test**:
@@ -150,7 +150,7 @@ Optional extra fallback: add a second **Send Notification** of type **Email** to
 | # | Action | Configuration |
 |---|---|---|
 | 1 | **Decision** "Know the customer participant?" | `Flow.customerParticipantId != ""` → No: *End Task* |
-| 2 | **Call Data Action** "Set Watchdog Status" | `CONVERSATION_ID` = `Flow.conversationId` · `PARTICIPANT_ID` = `Flow.customerParticipantId` · `STATUS` = `Flow.alertText` · `LEVEL` = `ToString(Flow.level)` · `CRITICAL` = `If(Flow.level == 2, "true", "false")` · `SINCE` = `If(Flow.level > 0, Flow.waitingSince, "")` · `UPDATED` = `ToString(GetCurrentDateTimeUtc())`. Failure and Timeout paths: nothing (the banner is best-effort; the chat alert still goes out). |
+| 2 | **Call Data Action** "Set Watchdog Status" | `CONVERSATION_ID` = `Flow.conversationId` · `PARTICIPANT_ID` = `Flow.customerParticipantId` · `STATUS` = `Flow.alertText` · `LEVEL` = `ToString(Flow.level)` · `CRITICAL` = `If(Flow.level == 2, "true", "false")` · `WARNING` = `If(Flow.level == 1, "true", "false")` · `SINCE` = `If(Flow.level > 0, Flow.waitingSince, "")` · `UPDATED` = `ToString(GetCurrentDateTimeUtc())`. Failure and Timeout paths: nothing (the banner is best-effort; the chat alert still goes out). |
 | 3 | **End Task** | |
 
 The script that displays these values is described in **[agent-workspace-script.md](agent-workspace-script.md)**. If you do not want the banner, skip this task and the two *Call Task* steps that reference it.
@@ -197,7 +197,7 @@ The same definition is in `triggers/message-connected-to-agent.trigger.json` for
 2. Log in as an agent on a pilot messaging queue and send a test web message / SMS.
 3. Accept it and **do not reply**. After ~45 s (plus up to one poll interval) a Collaborate chat toast arrives: *🟠 Jane Doe (webmessaging) is waiting for your reply…*. After ~90 s the 🔴 message arrives and repeats every 60 s.
 4. Reply: no further alerts. Send another customer message and stay silent: alerts start again from zero.
-4b. With the *Reply Watch* script attached (script guide): open the interaction after the toast – the page-load action refreshes the banner (amber at 45 s, red + modal at 90 s); after you reply, *Check now* clears it.
+4b. With the *Reply Watch* script imported from `scripts/Reply-Watch.script` and attached (script guide): open the interaction after the toast – the page-load action refreshes the banner (amber at 45 s, red + modal at 90 s); after you reply, *Check now* clears it.
 5. Transfer the interaction to another agent: the first agent gets no more alerts, the second agent's own workflow instance takes over.
 6. Watch the instances in **Admin › Architect › the workflow › Executions** (or `GET /api/v2/flows/executions`). Each message interaction has exactly one running instance per agent participant, and it ends when the interaction leaves the agent.
 

@@ -549,6 +549,8 @@ workflow:
                               exp: ToString(Flow.level)
                           - CRITICAL:
                               exp: If(Flow.level == 2, "true", "false")
+                          - WARNING:
+                              exp: If(Flow.level == 1, "true", "false")
                           - SINCE:
                               exp: If(Flow.level > 0, Flow.waitingSince, "")
                           - UPDATED:

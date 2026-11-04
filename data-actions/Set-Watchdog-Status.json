@@ -7,7 +7,7 @@
       "requestUrlTemplate": "/api/v2/conversations/messages/${input.CONVERSATION_ID}/participants/${input.PARTICIPANT_ID}/attributes",
       "requestType": "PATCH",
       "headers": {},
-      "requestTemplate": "{\"attributes\": {\"rw_status\": \"$esc.jsonString(${input.STATUS})\", \"rw_level\": \"${input.LEVEL}\", \"rw_critical\": \"${input.CRITICAL}\", \"rw_since\": \"${input.SINCE}\", \"rw_updated\": \"${input.UPDATED}\"}}"
+      "requestTemplate": "{\"attributes\": {\"rw_status\": \"$esc.jsonString(${input.STATUS})\", \"rw_level\": \"${input.LEVEL}\", \"rw_critical\": \"${input.CRITICAL}\", \"rw_warning\": \"${input.WARNING}\", \"rw_since\": \"${input.SINCE}\", \"rw_updated\": \"${input.UPDATED}\"}}"
     },
     "response": {
       "translationMap": {},
@@ -41,6 +41,10 @@
             "type": "string",
             "description": "true / false, drives the red banner's Visible property"
           },
+          "WARNING": {
+            "type": "string",
+            "description": "true / false, drives the amber banner's Visible property"
+          },
           "SINCE": {
             "type": "string",
             "description": "ISO-8601 time the customer has been waiting since ('' when not waiting)"
@@ -55,7 +59,8 @@
           "PARTICIPANT_ID",
           "STATUS",
           "LEVEL",
-          "CRITICAL"
+          "CRITICAL",
+          "WARNING"
         ],
         "additionalProperties": true
       }
