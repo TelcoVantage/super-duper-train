@@ -62,7 +62,9 @@ data-actions/
   templates/*.vm                    the Velocity success template, readable
   build_data_actions.py             regenerates the JSON from the templates
 workflow/
-  Unanswered-Message-Watchdog.archy.yaml   the workflow as Archy YAML (draft accelerator)
+  Unanswered-Message-Watchdog.i3WorkFlow   GUI-importable workflow (Architect > Save > Import)
+  build_i3workflow.py                      generates it (expression trees, action graph, data-action manifest)
+  Unanswered-Message-Watchdog.archy.yaml   the same flow as Archy YAML (draft accelerator)
 scripts/
   Reply-Watch.script                GUI-importable agent script (Scripts > Import) with the status banners
   build_reply_watch_script.py       generates it (deterministic ids, so Replace-import works)
@@ -75,7 +77,7 @@ test/                               template unit tests + artifact validation
 
 ## Getting started
 
-1. Read **[docs/build-guide.md](docs/build-guide.md)** and follow it top to bottom (data actions → group → workflow → trigger → test).
+1. Read **[docs/build-guide.md](docs/build-guide.md)** and follow it top to bottom (data actions → group → workflow → trigger → test). The workflow imports from `workflow/Unanswered-Message-Watchdog.i3WorkFlow` (build guide § 4.0).
    Then **[docs/agent-workspace-script.md](docs/agent-workspace-script.md)** for the banner on the Script panel: import `scripts/Reply-Watch.script`, publish, attach to the queue.
 2. Tune in one place: the workflow's `Flow.warnAfterSeconds`, `Flow.criticalAfterSeconds`, `Flow.repeatEverySeconds`, `Flow.pollSeconds` (and the matching Wait action).
 3. Pilot with a `queueId` condition on the trigger, then remove it.
@@ -84,7 +86,7 @@ test/                               template unit tests + artifact validation
 
 ```bash
 pip install airspeed pyyaml      # Velocity engine (Python port) + YAML parser
-sh test/run_tests.sh             # validates JSON/YAML/.script artifacts, 9 template tests + 6 script-structure tests
+sh test/run_tests.sh             # validates every artifact; 9 template + 7 workflow-file + 6 script-file tests
 ```
 
 The template tests render the exact Velocity text Genesys Cloud will run, against sample conversations covering: queue wait before connect, bot replies before hand-off, agent reply then new customer message, receipts/events/removed/failed messages, alerting / disconnected agents, transfers, JSON escaping of names.

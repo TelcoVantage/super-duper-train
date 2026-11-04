@@ -70,7 +70,21 @@ After each import, click the action › **Setup › Test**:
 
 ## 4. Build the workflow in Architect
 
-**Admin › Architect › Flows: Workflow › + Add**: name **`Unanswered Message Watchdog`**, division *Home* (or the division of the queues).
+### 4.0 Fastest: import `workflow/Unanswered-Message-Watchdog.i3WorkFlow` (5 minutes)
+
+The data actions from step 2 must already be imported and published – Architect matches them **by name** when it reads the file.
+
+1. **Admin › Architect › Flows: Workflow › + Add**. Name `Unanswered Message Watchdog`, pick the division, click **Create**.
+2. In the flow editor open the **Save** menu and click **Import**. Select `Unanswered-Message-Watchdog.i3WorkFlow`, click **Import**.
+3. Check the three kinds of **Call Data Action** boxes (*Get Message Reply State*, *Set Watchdog Status*, *Send Agent Chat Message*). If one shows a red "action not found" marker, select the action from its dropdown – inputs and outputs stay mapped.
+4. Review *Flow › Settings › Variables* to tune `Flow.warnAfterSeconds`, `Flow.criticalAfterSeconds`, `Flow.repeatEverySeconds`, `Flow.maxPolls`. If you change the **Wait** action duration, set `Flow.pollSeconds` to the same value.
+5. **Save**, then **Publish**. Copy the flow id from the browser URL for the trigger (step 5).
+
+What differs from the hand-built flow in 4.1–4.4: the wait is measured by counting polls (± one poll interval) instead of date arithmetic, the two *Notify* / *Write Status* tasks are inlined into the loop, and there is no group-chat fallback action in the file (the *Send Notification* action is not available in the import format we could reproduce). To add the fallback, open each **Send Agent Chat Message** box and drop a **Send Notification** (Chat → group *Messaging Reply Alerts*, message `Append("@", Flow.agentNames, " - ", Flow.alertText)`) into its *Failure* and *Timeout* paths – two minutes of clicks.
+
+`python3 workflow/build_i3workflow.py --json` regenerates the file and writes a readable JSON copy next to it for review; `python3 test/test_i3workflow.py` checks the action graph, variable references, expression positions and data-action contracts.
+
+### 4.0b Alternatives
 
 `workflow/Unanswered-Message-Watchdog.archy.yaml` is the same flow as Archy YAML (draft; validate with `archy validate`). To build by hand, follow the tables below exactly – expression text is copy-paste ready.
 

@@ -1,0 +1,54 @@
+[
+ {
+  "name": "errorCode",
+  "type": "str"
+ },
+ {
+  "name": "status",
+  "type": "int"
+ },
+ {
+  "name": "correlationId",
+  "type": "str"
+ },
+ {
+  "name": "entityId",
+  "type": "str"
+ },
+ {
+  "name": "entityName",
+  "type": "str"
+ },
+ {
+  "name": "userMessage",
+  "type": "str"
+ },
+ {
+  "name": "userParamsMessage",
+  "type": "str"
+ },
+ {
+  "name": "userParams.key",
+  "type": "str_coll"
+ },
+ {
+  "name": "userParams.value",
+  "type": "str_coll"
+ },
+ {
+  "name": "details.errorCode",
+  "type": "str_coll"
+ },
+ {
+  "name": "details.fieldName",
+  "type": "str_coll"
+ },
+ {
+  "name": "details.entityId",
+  "type": "str_coll"
+ },
+ {
+  "name": "details.entityName",
+  "type": "str_coll"
+ }
+]

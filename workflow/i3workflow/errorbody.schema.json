@@ -1,0 +1,116 @@
+{
+ "$schema": "http://json-schema.org/draft-04/schema#",
+ "title": "ErrorBody",
+ "description": "Detailed information about an error response.",
+ "type": "object",
+ "required": [
+  "errorCode",
+  "status",
+  "userMessage"
+ ],
+ "properties": {
+  "errors": {
+   "type": "array",
+   "items": {
+    "type": "object"
+   },
+   "name": "errors",
+   "required": false
+  },
+  "errorCode": {
+   "description": "A code unique to this error.",
+   "type": "string",
+   "name": "errorCode",
+   "required": false
+  },
+  "status": {
+   "description": "The HTTP status code for this message (400, 401, 403, 404, 500, etc.)",
+   "type": "integer",
+   "name": "status",
+   "required": false
+  },
+  "correlationId": {
+   "description": "The correlation Id or context Id for this message. If left blank the Public API will look at the HTTP response header 'ININ-Correlation-Id' instead.",
+   "type": "string",
+   "name": "correlationId",
+   "required": false
+  },
+  "entityId": {
+   "description": "The ID of the entity this error refers to. Only used in BackendErrorBody instances within the errors array.",
+   "type": "string",
+   "name": "entityId",
+   "required": false
+  },
+  "entityName": {
+   "description": "The name of the entity this error refers to. Only used in BackendErrorBody instances within the errors array.",
+   "type": "string",
+   "name": "entityName",
+   "required": false
+  },
+  "userMessage": {
+   "description": "A customer friendly message. This should be a complete sentence, use proper grammar and only include information useful to a customer. This is not a dev message and should not include things like Org Id",
+   "type": "string",
+   "name": "userMessage",
+   "required": false
+  },
+  "userParamsMessage": {
+   "description": "This is the same as message except it uses template fields for variable replacement. For instance: 'User {username} was not found'",
+   "type": "string",
+   "name": "userParamsMessage",
+   "required": false
+  },
+  "userParams.key": {
+   "description": "Used in conjunction with userParamsMessage. These are the template parameters. For instance: UserParam.key = 'username', UserParam.value = 'john.doe'",
+   "type": "array",
+   "items": {
+    "description": "Key name of userParam  pair.",
+    "type": "string"
+   },
+   "name": "userParams.key",
+   "required": false
+  },
+  "userParams.value": {
+   "description": "Used in conjunction with userParamsMessage. These are the template parameters. For instance: UserParam.key = 'username', UserParam.value = 'john.doe'",
+   "type": "array",
+   "items": {
+    "description": "Value of userParam  pair.",
+    "type": "string"
+   },
+   "name": "userParams.value",
+   "required": false
+  },
+  "details.errorCode": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "name": "details.errorCode",
+   "required": false
+  },
+  "details.fieldName": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "name": "details.fieldName",
+   "required": false
+  },
+  "details.entityId": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "name": "details.entityId",
+   "required": false
+  },
+  "details.entityName": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "name": "details.entityName",
+   "required": false
+  }
+ },
+ "additionalProperties": false
+}
